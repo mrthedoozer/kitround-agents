@@ -1,53 +1,40 @@
 // app/api/chat/route.ts
 import { NextRequest } from 'next/server';
 import { run } from '@openai/agents';
-import { director } from '../../../lib/agents';
+import { director } from '../../../lib/agents'; // <- 3 levels up from app/api/chat/route.ts
 
 export const runtime = 'nodejs';
 
-// Narrow result without using `any`
-type FinalOutput = string | { text?: string };
-type RunResultShape = { finalOutput?: FinalOutput };
-
-function extractText(result: unknown): string {
-  if (typeof result === 'object' && result !== null && 'finalOutput' in result) {
-    const r = result as RunResultShape;
-    if (typeof r.finalOutput === 'string') return r.finalOutput;
-    if (
-      r.finalOutput &&
-      typeof r.finalOutput === 'object' &&
-      'text' in r.finalOutput &&
-      typeof (r.finalOutput as { text?: unknown }).text === 'string'
-    ) {
-      return (r.finalOutput as { text?: string }).text ?? '';
-    }
-  }
-  return '';
-}
+type Body = { message?: string; mode?: string };
 
 export async function POST(req: NextRequest) {
   try {
-    const body: unknown = await req.json();
-    const message = (body as { message?: unknown })?.message;
-    const mode = (body as { mode?: unknown })?.mode;
+    const { message, mode }: Body = await req.json();
 
-    if (typeof message !== 'string' || !message.trim()) {
+    if (!message || typeof message !== 'string') {
       return Response.json({ error: 'Missing "message"' }, { status: 400 });
     }
 
-    const validModes = ['SPARK', 'LENS', 'COACH', 'CONNECTOR'] as const;
-    const input =
-      typeof mode === 'string' && validModes.includes(mode.toUpperCase() as (typeof validModes)[number])
-        ? `[${mode.toUpperCase()}] ${message}`
+    // Optional specialist override: prefix the message with [SPARK]/[LENS]/[COACH]/[CONNECTOR]
+    const useMode = typeof mode === 'string' ? mode.toUpperCase() : undefined;
+    const textInput =
+      useMode && ['SPARK', 'LENS', 'COACH', 'CONNECTOR'].includes(useMode)
+        ? `[${useMode}] ${message}`
         : message;
 
-    const result = await run(director, input);
-    const text = extractText(result);
+    // pass a string to run()
+    const result = await run(director, textInput);
+
+    // normalise result text
+    const text =
+      typeof (result as any).finalOutput === 'string'
+        ? ((result as any).finalOutput as string)
+        : ((result as any).finalOutput?.text as string) ?? '';
 
     return Response.json({ ok: true, text });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(msg);
+    console.error(err);
     return Response.json({ error: msg || 'Server error' }, { status: 500 });
   }
 }

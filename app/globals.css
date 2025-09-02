@@ -79,3 +79,30 @@ body{
 .copyRow{ display:flex; justify-content:flex-end; margin-top:10px; }
 
 .brand{ color:var(--brand); }
+/* Buttons */
+.btn { border-radius: 12px; padding: 8px 14px; border: 1px solid var(--border); cursor: pointer; }
+.btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+.btn.secondary { background: #fff; color: var(--text); }
+.btn:hover { filter: brightness(0.98); }
+
+/* Chips */
+.chips { display: flex; gap: 8px; margin: 8px 0 12px; }
+.chip { padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px; background: #fff; cursor: pointer; }
+.chip.active { background: #fff0f0; border-color: var(--brand); color: var(--brand); }
+
+/* Templates */
+.templates { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.template { padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; }
+
+/* Textarea */
+.textarea { width: 100%; min-height: 140px; border-radius: 14px; border: 1px solid var(--border); padding: 12px; }
+
+/* Actions row */
+.actions { display: flex; gap: 10px; align-items: center; margin: 10px 0 4px; }
+
+/* Markdown output spacing */
+.out :where(h1,h2,h3,h4){ margin: 12px 0 6px; }
+.out p { margin: 6px 0; }
+.out ul { padding-left: 1.2rem; margin: 6px 0; }
+.out table { border-collapse: collapse; margin: 8px 0; }
+.out table th, .out table td { border: 1px solid var(--border); padding: 6px 8px; }
