@@ -30,11 +30,11 @@ export default function Home() {
           mode: mode === 'Auto' ? undefined : mode.toUpperCase()
         })
       });
-      const data: ApiResponse = await res.json();
+      const data = (await res.json()) as ApiResponse;
       if (!res.ok || !data.ok) throw new Error(data.error || 'Request failed');
       setOut(data.text || '');
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
