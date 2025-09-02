@@ -77,6 +77,7 @@ Routing:
 - Do not show internal role chatter; produce one cohesive answer.
 
 Output format (always):
+Use Markdown for all formatting (### headings, bullet lists, tables). No code blocks.
 1) Director’s summary (1–2 sentences)
 2) Main answer (sections, bullets, tables as useful)
 3) What I did (2–4 bullets; high-level; no chain-of-thought)

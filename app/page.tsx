@@ -1,5 +1,9 @@
 'use client';
+
 import { useState } from 'react';
+import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type ApiResponse = { ok?: boolean; text?: string; error?: string };
 
@@ -12,6 +16,10 @@ const TEMPLATES = [
 const MODES = ['Auto', 'Spark', 'Lens', 'Coach', 'Connector'] as const;
 type Mode = typeof MODES[number];
 
+// Small prefix to nudge the agents to clean Markdown
+const FORMAT_PREF =
+  'Please format in **Markdown** with `###` section headings, bullet lists, and tables where useful. No code fences. British English.';
+
 export default function Home() {
   const [mode, setMode] = useState<Mode>('Auto');
   const [input, setInput] = useState('');
@@ -20,13 +28,14 @@ export default function Home() {
   const [err, setErr] = useState<string>('');
 
   async function send(message: string) {
+    if (!message.trim()) return;
     setLoading(true); setErr('');
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message,
+          message: `${FORMAT_PREF}\n\n${message}`,
           mode: mode === 'Auto' ? undefined : mode.toUpperCase()
         })
       });
@@ -41,24 +50,25 @@ export default function Home() {
   }
 
   return (
-    <main style={{minHeight:'100vh', background:'#fff', color:'#111'}}>
-      <div style={{maxWidth: '760px', margin: '0 auto', padding: '40px 16px'}}>
-        <header style={{marginBottom: 16}}>
-          <h1 style={{fontSize: 24, fontWeight: 600}}>kitround Director</h1>
-          <p style={{fontSize: 14, color:'#555'}}>Orchestrator (The Director → Spark / Lens / Coach / Connector)</p>
+    <main>
+      <div className="container">
+        {/* Header */}
+        <header className="header">
+          <Image src="/kitround-logo.png" alt="kitround" width={150} height={40} className="logo" />
+          <div>
+            <h1 className="title">kitround Director</h1>
+            <p className="subtitle">Orchestrator <span className="brand">(The Director → Spark / Lens / Coach / Connector)</span></p>
+          </div>
         </header>
 
         {/* Mode chips */}
-        <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:16}}>
+        <div className="chips">
           {MODES.map(m => (
             <button
               key={m}
               onClick={() => setMode(m)}
-              style={{
-                border:'1px solid #ddd', borderRadius:9999, padding:'6px 10px',
-                background: m === mode ? '#111' : '#fff', color: m === mode ? '#fff' : '#111',
-                cursor:'pointer'
-              }}
+              className={`chip ${m === mode ? 'active' : ''}`}
+              aria-pressed={m === mode}
             >
               {m}
             </button>
@@ -66,55 +76,51 @@ export default function Home() {
         </div>
 
         {/* Templates */}
-        <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:24}}>
+        <div className="templates">
           {TEMPLATES.map(t => (
-            <button
-              key={t.label}
-              onClick={() => setInput(t.prompt)}
-              title={t.prompt}
-              style={{border:'1px solid #ddd', borderRadius:8, padding:'8px 10px', cursor:'pointer', background:'#fff'}}
-            >
+            <button key={t.label} onClick={() => setInput(t.prompt)} className="template" title={t.prompt}>
               {t.label}
             </button>
           ))}
         </div>
 
         {/* Input */}
-        <div style={{marginBottom:12}}>
-          <textarea
-            placeholder="Tell The Director what you need…"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            style={{width:'100%', minHeight:120, border:'1px solid #ddd', borderRadius:8, padding:12}}
-          />
-        </div>
-        <div style={{display:'flex', gap:8, marginBottom:24}}>
+        <textarea
+          className="textarea"
+          placeholder="Tell The Director what you need…"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+        />
+
+        {/* Actions */}
+        <div className="actions">
           <button
             onClick={() => send(input)}
             disabled={loading || !input.trim()}
-            style={{background:'#111', color:'#fff', padding:'10px 14px', borderRadius:8, border:'none', cursor:'pointer', opacity: (loading || !input.trim()) ? 0.6 : 1}}
+            className="btn primary"
+            style={{ opacity: (loading || !input.trim()) ? 0.6 : 1 }}
           >
             {loading ? 'Thinking…' : 'Run'}
           </button>
-          <button onClick={() => setInput('')} style={{border:'1px solid #ddd', borderRadius:8, padding:'8px 12px', cursor:'pointer', background:'#fff'}}>
-            Clear
-          </button>
+          <button onClick={() => setInput('')} className="btn secondary">Clear</button>
         </div>
 
         {/* Output */}
-        {err && <div style={{color:'#b00020', marginBottom:12}}>{err}</div>}
-        {out && (
-          <article>
-            <pre style={{whiteSpace:'pre-wrap', lineHeight:1.5}}>{out}</pre>
-            <div style={{marginTop:12}}>
+        {err && <div style={{ color: '#b00020', marginBottom: 12 }}>{err}</div>}
+
+        {!!out && (
+          <section className="out">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{out}</ReactMarkdown>
+            <div className="copyRow">
               <button
                 onClick={() => navigator.clipboard.writeText(out)}
-                style={{border:'1px solid #ddd', borderRadius:8, padding:'8px 12px', cursor:'pointer', background:'#fff'}}
+                className="btn secondary"
+                title="Copy the output (Markdown)"
               >
                 Copy
               </button>
             </div>
-          </article>
+          </section>
         )}
       </div>
     </main>
